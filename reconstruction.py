@@ -40,7 +40,6 @@ def reconstruction(mesh,var_interest,nb_times,freq_min:int,freq_max:int,fft_file
     print("Reading the Base Mesh File")
     print("Reconstructing the filtered signal")
     for var in var_interest:
-        var = var.split('/')[-1]
         # Loading the filtered data from the fft_file
         f=h5py.File(fft_file,'r')
         tim=f['/time'][()]

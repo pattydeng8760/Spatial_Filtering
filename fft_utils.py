@@ -50,14 +50,13 @@ def fft(output, nnodes, var_interest, dt, freq_min, freq_max, zones, override=Fa
         sys.error('Output directory does not exist.')
     # Loop over the variables of interest
     for var in var_interest:
-        var = var.split('/')[-1]
         print('Compute FFT for variable {0:s} in {1:s}'.format(var,nmp))
         filename='{0:s}/field_{1:s}.h5'.format(output,var)  
         f=h5py.File(filename,'r')
         data=f['/field'][()]
         f.close()
         nb_ite=data.shape[1]
-        nnodes=data.shape[0
+        nnodes=data.shape[0]
         nlen=nb_ite if nb_ite%2==0 else nb_ite+1
         
         print("Beginning the forward FFT proecdure.")

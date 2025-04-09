@@ -1,4 +1,4 @@
-# field_filter.py
+# spatial_filter.py
 import argparse
 import os
 import sys
@@ -8,7 +8,7 @@ from data_extraction import create_tempo_base
 from fft_utils import fft
 from reconstruction import reconstruction
 
-class FieldFilter:
+class SpatialFilter:
     """A class to handle the filtering of field data from AVBP cutplanes.
     Args:
         dir_to_post (str): The directory where the AVBP cutplane files are located.
@@ -34,7 +34,7 @@ class FieldFilter:
         self.freq_min = args.freq_min
         self.freq_max = args.freq_max
         self.target_dir = os.path.join(self.output, args.cut_location+'_Filtered_'+str(freq_min)+'_'+str(freq_max))
-        self.var_interest = ['dilatation_node']
+        self.variable = args.var_interest
         self.dt = args.dt
         self.zones = args.zones
         self.override = args.override
@@ -48,9 +48,9 @@ class FieldFilter:
     def run(self):
         self.print(f'\n{"Starting the Filtering Program":.^120}\n')
         mesh, mesh_nodes = extract_surface(self.mesh_dir, self.mesh_filename, self.output, 'EXTRACT', self.cut_location)
-        nnodes, nb_times = extract_data(self.dir_to_post, self.cut_location, self.output, self.var_interest, reload_data=False)
-        fft_file = fft(self.cut_location, self.output, nnodes, self.var_interest, self.dt, self.freq_min, self.freq_max, self.zones, self.override)
-        reconstruction(self.dir_to_post, mesh, self.var_interest, nb_times, self.freq_min, self.freq_max, fft_file, self.target_dir)
+        nnodes, nb_times = extract_data(self.dir_to_post, self.cut_location, self.output, self.variable, reload_data=False)
+        fft_file = fft(self.cut_location, self.output, nnodes, self.variable, self.dt, self.freq_min, self.freq_max, self.zones, self.override)
+        reconstruction(self.dir_to_post, mesh, self.variable, nb_times, self.freq_min, self.freq_max, fft_file, self.target_dir)
         self.print(f'\n{"Filtering Program Complete":.^120}\n')
 
 def parse_args():
@@ -60,7 +60,7 @@ def parse_args():
     parser.add_argument('--mesh_filename', required=True, help='Name of AVBP mesh file (e.g. Bombardier_10AOA.mesh.h5)')
     parser.add_argument('--cut_location', required=True, help='Name of cut location')
     parser.add_argument('--dt', type=float, required=True, help='Time step between snapshots')
-    parser.add_argument('--var_interest', nargs='+', default=['dilatation_node'], help='Variables of interest to extract')
+    parser.add_argument('--variable', nargs='+', default=['dilatation'], help='Variables of interest to extract')
     parser.add_argument('--freq_min', type=int, default=800, help='Min frequency for bandpass')
     parser.add_argument('--freq_max', type=int, default=1500, help='Max frequency for bandpass')
     parser.add_argument('--zones', type=int, default=1500, help='Number of spatial segments in FFT')
