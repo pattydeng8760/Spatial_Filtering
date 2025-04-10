@@ -44,10 +44,12 @@ def reconstruction(mesh,var_interest,nb_times,freq_min:int,freq_max:int,fft_file
         # The time array is the same for all variables
         timearray=tim
         timearray=timearray[nstart:nend:ndt] if ndt is not None and nend is not None and nstart is not None else timearray
+        indexarray=np.linspace(0,nb_times-1,nb_times)
+        indexarray=indexarray[nstart:nend:ndt] if ndt is not None and nend is not None and nstart is not None else indexarray
         # Reconstructing the filtered signal
         for idx,value in enumerate(timearray):
             if idx%100==0:
-                print('    Reconstructing the signal at time {0:03.0f} of {1:03.0f}'.format(idx,len(timearray)))
+                print('    Reconstructing the signal at time {0:03.0f} of {1:03.0f}'.format(indexarray[idx],nb_times-1))
             animated_base = Base()
             animated_base['0'] = Zone()
             animated_base[0].shared.connectivity = plane[0][0].connectivity
