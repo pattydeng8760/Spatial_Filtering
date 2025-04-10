@@ -4,4 +4,8 @@ from .extract_data import extract_data
 from .fft_utils import fft
 from .reconstruction import reconstruction
 
-print("[spatial_filter] Module initialized.")
+def main():
+    print("[spatial_filter] Module initialized.")
+
+if __name__ == "__main__":
+    main()

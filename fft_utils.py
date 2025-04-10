@@ -193,7 +193,7 @@ def parallel_fft(output, nnodes, var_interest, dt, freq_min, freq_max, zones, ov
     # For each variable, perform the parallel FFT/IFFT filtering.
     for var in var_interest:
         print(f"Processing variable: {var}")
-        outfile = os.path.join(output, f'new_ifft_{var}_freq_{int(freq_min):03}_{int(freq_max):03}.h5')
+        outfile = os.path.join(output, f'ifft_{var}_freq_{int(freq_min):03}_{int(freq_max):03}.h5')
         # Check if the output directory exists
         if os.path.exists(outfile):
             print('Output fft data already exists. Skipping processing...')

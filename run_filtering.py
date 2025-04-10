@@ -1,5 +1,5 @@
 # Function to run the filtering process
-from filtering.spatial_filter import SpatialFilter
+from .spatial_filter import SpatialFilter
 import argparse
 
 # The required inputs

@@ -34,7 +34,7 @@ class SpatialFilter:
         self.output = f'Filtered_{args.cut_location}'
         self.freq_min = args.freq_min
         self.freq_max = args.freq_max
-        self.target_dir = os.path.join(self.output, args.cut_location+'_Filtered_'+str(self.freq_min)+'_'+str(self.freq_max))
+        self.target_dir = os.path.join(self.output, 'Filtered_Reconstruction'+args.cut_location+'_'+str(self.freq_min)+'_'+str(self.freq_max))
         self.variable = args.variable
         self.dt = args.dt
         self.cores = args.cores
@@ -87,8 +87,8 @@ def parse_args():
 
 def main():
     args = parse_args()
-    field_filter = FieldFilter(args)
-    field_filter.run()
+    field_filter = SpatialFilter(args)
+    field_filter.run(args)
 
 if __name__ == '__main__':
     main()
