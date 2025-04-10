@@ -38,9 +38,10 @@ def extract_data(dir_to_post:str, mesh:str, output:str, var_interest:str, data_t
             print(f"File {var_name} already exists. Skipping extraction.")
             return nnodes, nb_times
         else:
-            print(f"\nExtracting var: {var_name}")
+            print(f"\n---->Extracting var: {var_name}")
             # Initialize an array to hold the data for this variable across all timesteps
             data = np.zeros((nnodes, nb_times))
+            for it, filename in enumerate(file_list):
                 if data_type == 'FWH':
                     f=h5py.File(filename,'r')
                     press=f['frame_data/'+var][()]
@@ -61,12 +62,12 @@ def extract_data(dir_to_post:str, mesh:str, output:str, var_interest:str, data_t
                 # Provide progress feedback every 100 files and on the last file
                 if it % 100 == 0 or it == nb_times - 1:
                     print(f"    {it} | {nb_times - 1} files loaded")
-                it += 1
+                    
             # Save the collected data for the current variable
             field_file = os.path.join(output, f"field_{var_name}.h5")
             with h5py.File(field_file, 'w') as gid:
                 gid.create_dataset('field', data=data)
-            print(f"\nThe base data is saved in: {field_file}")
+            print(f"\n---->The base data is saved in: {field_file}")
     # Print footer to indicate the extraction is complete
     footer = "Base Data Extraction Complete"
     print(f"\n{footer:.^80}\n")

@@ -3,10 +3,10 @@ import argparse
 import os
 import sys
 import builtins
-from mesh_utils import extract_surface
-from data_extraction import create_tempo_base
-from fft_utils import fft
-from reconstruction import reconstruction
+from .mesh_utils import extract_surface
+from .extract_data import extract_data
+from .fft_utils import fft
+from .reconstruction import reconstruction
 
 class SpatialFilter:
     """A class to handle the filtering of field data from AVBP cutplanes.
@@ -33,8 +33,8 @@ class SpatialFilter:
         self.output = f'{args.cut_location}'
         self.freq_min = args.freq_min
         self.freq_max = args.freq_max
-        self.target_dir = os.path.join(self.output, args.cut_location+'_Filtered_'+str(freq_min)+'_'+str(freq_max))
-        self.variable = args.var_interest
+        self.target_dir = os.path.join(self.output, args.cut_location+'_Filtered_'+str(self.freq_min)+'_'+str(self.freq_max))
+        self.variable = args.variable
         self.dt = args.dt
         self.zones = args.zones
         self.override = args.override
