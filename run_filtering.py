@@ -1,5 +1,5 @@
 # Function to run the filtering process
-from .spatial_filter import SpatialFilter
+from filtering.spatial_filter import SpatialFilter
 import argparse
 
 # The required inputs
@@ -22,12 +22,12 @@ args = argparse.Namespace(
     zones=5000,
     variable=variable,
     cores=20,
-    override=False,
     nstart = 200,
     nend = 600,
     ndt = 2,
+    butterworth=True,
 )
 
 # Call the FieldFilter class like you would from the CLI
 filter_job = SpatialFilter(args)
-filter_job.run()
+filter_job.run(args)

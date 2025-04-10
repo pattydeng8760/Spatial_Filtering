@@ -29,7 +29,7 @@ def reconstruction(mesh,var_interest,nb_times,freq_min:int,freq_max:int,fft_file
         shutil.rmtree(target_dir)
     os.makedirs(target_dir, exist_ok = False)        # The mesh file of the transient signal
     text = 'Beginning reconstruction process'
-    print(f'\n{text:.^80}\n')  
+    print(f'\n{text:.^60}\n')  
     # Reading the mesh file
     r=Reader('hdf_antares')
     r['filename']='{0:s}'.format(mesh)
@@ -67,4 +67,4 @@ def reconstruction(mesh,var_interest,nb_times,freq_min:int,freq_max:int,fft_file
     print(f'\n{text}\n')  
     del w, plane
     text = 'Reconstruction Process Complete'
-    print(f'\n{text:.^80}\n')  
+    print(f'\n{text:.^60}\n')  

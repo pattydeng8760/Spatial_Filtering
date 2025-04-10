@@ -6,7 +6,7 @@ import time
 import builtins
 from .mesh_utils import extract_surface
 from .extract_data import extract_data
-from .fft_utils import fft, parallel_fft
+from .fft_utils import fft, parallel_fft, parallel_butterworth
 from .reconstruction import reconstruction
 
 class SpatialFilter:
@@ -31,10 +31,10 @@ class SpatialFilter:
         self.mesh_dir = args.mesh_dir
         self.mesh_filename = args.mesh_filename
         self.cut_location = args.cut_location
-        self.output = f'Filtered_{args.cut_location}'
+        self.output = f'Filtered_{args.cut_location}_Butterworth' if args.butterworth else f'Filtered_{args.cut_location}'
         self.freq_min = args.freq_min
         self.freq_max = args.freq_max
-        self.target_dir = os.path.join(self.output, 'Filtered_Reconstruction'+args.cut_location+'_'+str(self.freq_min)+'_'+str(self.freq_max))
+        self.target_dir = os.path.join(self.output, 'Filtered_Reconstruction_'+args.cut_location+'_'+str(self.freq_min)+'_'+str(self.freq_max))
         self.variable = args.variable
         self.dt = args.dt
         self.cores = args.cores
@@ -42,7 +42,7 @@ class SpatialFilter:
         self.override = args.override
         os.makedirs(self.target_dir, exist_ok=True)
         # Redirecting stdout to a log file
-        log_file = f'log_{args.cut_location}_{args.freq_min}_{args.freq_max}.txt'
+        log_file = f'log_{args.cut_location}_{args.freq_min}_{args.freq_max}_Butterworth.txt' if args.butterworth else f'log_{args.cut_location}_{args.freq_min}_{args.freq_max}.txt'
         sys.stdout = open(log_file, "w", buffering=1)
         def print_redirect(text): builtins.print(text); os.fsync(sys.stdout)
         self.print = print_redirect
@@ -63,7 +63,10 @@ class SpatialFilter:
         self.print(f'\n{"Starting Filtering Program":=^100}\n')
         mesh, mesh_nodes = extract_surface(self.mesh_dir, self.mesh_filename, self.output, 'EXTRACT', self.cut_location)
         nnodes, nb_times = extract_data(self.dir_to_post, self.cut_location, mesh ,self.output, self.variable, 'EXTRACT',reload_data=False)
-        fft_file = parallel_fft(self.output, nnodes, self.variable, self.dt, self.freq_min, self.freq_max, self.zones, self.override, args.cores)
+        if args.butterworth:
+            fft_file = parallel_butterworth(self.output, nnodes, self.variable, self.dt, self.freq_min, self.freq_max, self.zones, args.cores)
+        else: 
+            fft_file = parallel_fft(self.output, nnodes, self.variable, self.dt, self.freq_min, self.freq_max, self.zones, args.cores)
         reconstruction( mesh, self.variable, nb_times, self.freq_min, self.freq_max, fft_file, self.target_dir,args.nstart,args.nend, args.ndt)
         self.print(f'\n{"Filtering Program Complete":=^100}\n')
 
@@ -83,6 +86,7 @@ def parse_args():
     parser.add_argument('--nstart', type=int, default=None, help='Start index for reconstruction')
     parser.add_argument('--nend', type=int, default=None, help='End index for reconstruction')
     parser.add_argument('--ndt', type=int, default=None, help='Interval for reconstruction')
+    parser.add_argument('--butterworth', action='store_true', help='Use Butterworth filter')
     return parser.parse_args()
 
 def main():

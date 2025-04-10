@@ -167,7 +167,7 @@ def segment_ifft_worker(fft_segment, seg_id):
     return np.real(sf.ifft(fft_segment, axis=1)),seg_id
 
 
-def parallel_fft(output, nnodes, var_interest, dt, freq_min, freq_max, zones, override=False, num_cpu=10):
+def parallel_fft(output, nnodes, var_interest, dt, freq_min, freq_max, zones,  num_cpu=10):
     """
     Performs FFT-based filtering in parallel by partitioning the node data,
     applying FFT and IFFT on each segment, and then stitching the results.
@@ -180,7 +180,7 @@ def parallel_fft(output, nnodes, var_interest, dt, freq_min, freq_max, zones, ov
         freq_min (float): Minimum frequency for the bandpass filter.
         freq_max (float): Maximum frequency for the bandpass filter.
         zones (int): Approximate number of segments (blocks) to partition the node data.
-        override (bool): If True, bypass matching nprobe to a factor.
+        num_cpu (int): Number of CPU cores to use.
     
     Returns:
         outfile (str): The path to the output file with the filtered results.
@@ -271,3 +271,84 @@ def parallel_fft(output, nnodes, var_interest, dt, freq_min, freq_max, zones, ov
     print(f'\n{text:.^60}\n')  
     return outfile
 
+def butter_filter_worker(data_segment, dt, fmin, fmax, order, seg_id):
+    """
+    Worker function to apply a Butterworth bandpass filter on a data segment.
+    Uses filtfilt for zero-phase filtering.
+    """
+    b, a = sg.butter(order, [fmin / (0.5/dt), fmax / (0.5/dt)], btype="band")
+    if seg_id % 100 == 0:
+        print(f"    Filtering segment {seg_id}")
+    filtered = sg.filtfilt(b, a, data_segment, axis=1)
+    return filtered, seg_id
+        
+        
+def parallel_butterworth(output, nnodes, var_interest, dt, freq_min, freq_max, zones, num_cpu=5):
+    """
+    Performs Butterworth bandpass filtering in parallel by partitioning the node data,
+    applying the filter on each segment, and then stitching the results.
+    
+    Args:
+        output (str): Directory containing the HDF5 field data and where to save output.
+        nnodes (int): Total number of nodes in the field.
+        var_interest (list): List of variable names (e.g., ['dilatation_node']) to process.
+        dt (float): Time step size.
+        freq_min (float): Lower cutoff frequency.
+        freq_max (float): Upper cutoff frequency.
+        zones (int): Approximate number of segments (blocks) to partition the node data.
+        order (int): Order of the Butterworth filter.
+        num_cpu (int): Number of CPU cores to use.
+    
+    Returns:
+        outfile (str): The path to the output file with the filtered results.
+    """
+    text = "Beginning the Butterworth filtering process"
+    print(f"\n{text.center(80, '.')} \n")
+    order = 4
+    for var in var_interest:
+        print(f"Processing variable: {var}")
+        filepath = os.path.join(output, f"field_{var}.h5")
+        outfile = os.path.join(output, f"butter_{var}_order_{order}_fmin_{int(freq_min):03}_fmax_{int(freq_max):03}.h5")
+        if os.path.exists(outfile):
+            print("Output filtered data already exists. Skipping processing...")
+            continue
+        print(f"\n----> Extracting field data for variable: {var}")
+        # Open file and load data into memory (adjust if memory is an issue)
+        with h5py.File(filepath, "r") as f:
+            dataset = np.array(f["/field"])
+            data_shape = dataset.shape  # (nnodes, ntime)
+            if data_shape[0] != nnodes:
+                print(f"Warning: nnodes ({nnodes}) does not match dataset shape ({data_shape[0]})")
+            ntime = data_shape[1]
+        # Pre-slice the data along the node dimension.
+        node_indices = np.array_split(np.arange(nnodes), zones)
+        butter_tasks = [(dataset[indices, :], dt, freq_min, freq_max, order, block_num)
+            for block_num, indices in enumerate(node_indices)]
+        print(f"Pre-sliced {nnodes} nodes into {len(butter_tasks)} segments.")
+        
+        # Design Butterworth filter parameters.
+        nyq = 0.5 / dt
+        low = freq_min / nyq
+        high = freq_max / nyq
+        
+        print("----> Parallelizing Butterworth filtering ...")
+        with Pool(processes=num_cpu) as pool:
+            results = pool.starmap(butter_filter_worker, butter_tasks)
+        # Stitch filtered segments together.
+        filtered_data = np.zeros((nnodes, ntime), dtype=np.float32)
+        for seg_result, seg_id in results:
+            filtered_data[node_indices[seg_id], :] = seg_result
+        # Optionally, compute RMS (standard deviation over time) for each node.
+        rms = np.std(filtered_data, axis=1)
+        timesignal = np.linspace(0, dt * ntime, ntime)
+        
+        # Save the filtered results and RMS to an output HDF5 file.
+        with h5py.File(outfile, "w") as g:
+            g[f"filtered_{var}"] = filtered_data
+            g[f"filtered_rms_{var}"] = rms
+            g["time"] = timesignal
+        print(f"----> Filtered data for variable '{var}' saved to:\n {outfile}")
+    
+    text = "Butterworth filtering process complete"
+    print(f"\n{text.center(80, '.')} \n")
+    return outfile

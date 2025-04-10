@@ -65,7 +65,7 @@ def extract_data(dir_to_post:str, cut_location:str ,mesh:str, output:str, var_in
                     data[:,it]=press
                 # Provide progress feedback every 100 files and on the last file
                 if it % 100 == 0 or it == nb_times - 1:
-                    print(f"    {it} | {nb_times - 1} files loaded")
+                    print('    {0:3d} | {1:3d} files loaded'.format(it, nb_times-1))
                     
             # Save the collected data for the current variable
             field_file = os.path.join(output, f"field_{var}.h5")
