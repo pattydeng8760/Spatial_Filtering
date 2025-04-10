@@ -42,7 +42,7 @@ class SpatialFilter:
         self.override = args.override
         os.makedirs(self.target_dir, exist_ok=True)
         # Redirecting stdout to a log file
-        log_file = f'log_{args.cut_location}.txt'
+        log_file = f'log_{args.cut_location}_{args.freq_min}_{args.freq_max}.txt'
         sys.stdout = open(log_file, "w", buffering=1)
         def print_redirect(text): builtins.print(text); os.fsync(sys.stdout)
         self.print = print_redirect
