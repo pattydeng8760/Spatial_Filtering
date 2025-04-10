@@ -59,12 +59,12 @@ class SpatialFilter:
         return inner
     
     @timer
-    def run(self):
+    def run(self,args):
         self.print(f'\n{"Starting Filtering Program":=^100}\n')
         mesh, mesh_nodes = extract_surface(self.mesh_dir, self.mesh_filename, self.output, 'EXTRACT', self.cut_location)
         nnodes, nb_times = extract_data(self.dir_to_post, self.cut_location, mesh ,self.output, self.variable, 'EXTRACT',reload_data=False)
-        fft_file = parallel_fft(self.output, nnodes, self.variable, self.dt, self.freq_min, self.freq_max, self.zones, self.override, self.cores)
-        reconstruction( mesh, self.variable, nb_times, self.freq_min, self.freq_max, fft_file, self.target_dir)
+        fft_file = parallel_fft(self.output, nnodes, self.variable, self.dt, self.freq_min, self.freq_max, self.zones, self.override, args.cores)
+        reconstruction( mesh, self.variable, nb_times, self.freq_min, self.freq_max, fft_file, self.target_dir,args.nstart,args.nend, args.ndt)
         self.print(f'\n{"Filtering Program Complete":=^100}\n')
 
 def parse_args():
@@ -80,6 +80,9 @@ def parse_args():
     parser.add_argument('--zones', type=int, default=1500, help='Number of spatial segments in FFT')
     parser.add_argument('--cores', type=int, default=10, help='Number of cores for parallel FFT')
     parser.add_argument('--override', type=bool, default=False, help='Force override of FFT segmentation zones')
+    parser.add_argument('--nstart', type=int, default=None, help='Start index for reconstruction')
+    parser.add_argument('--nend', type=int, default=None, help='End index for reconstruction')
+    parser.add_argument('--ndt', type=int, default=None, help='Interval for reconstruction')
     return parser.parse_args()
 
 def main():
