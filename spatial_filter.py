@@ -2,10 +2,11 @@
 import argparse
 import os
 import sys
+import time
 import builtins
 from .mesh_utils import extract_surface
 from .extract_data import extract_data
-from .fft_utils import fft
+from .fft_utils import fft, parallel_fft
 from .reconstruction import reconstruction
 
 class SpatialFilter:
@@ -30,12 +31,13 @@ class SpatialFilter:
         self.mesh_dir = args.mesh_dir
         self.mesh_filename = args.mesh_filename
         self.cut_location = args.cut_location
-        self.output = f'{args.cut_location}'
+        self.output = f'Filtered_{args.cut_location}'
         self.freq_min = args.freq_min
         self.freq_max = args.freq_max
         self.target_dir = os.path.join(self.output, args.cut_location+'_Filtered_'+str(self.freq_min)+'_'+str(self.freq_max))
         self.variable = args.variable
         self.dt = args.dt
+        self.cores = args.cores
         self.zones = args.zones
         self.override = args.override
         os.makedirs(self.target_dir, exist_ok=True)
@@ -45,13 +47,25 @@ class SpatialFilter:
         def print_redirect(text): builtins.print(text); os.fsync(sys.stdout)
         self.print = print_redirect
 
+    def timer(func):
+        """ Decorator to time the function func to track the time taken for the function to run"""
+        def inner(*args, **kwargs):
+            start = time.time()
+            result = func(*args, **kwargs)
+            end = time.time()
+            elapsed = end - start
+            print('The total compute time is: {0:1.0f} s'.format(elapsed))
+            return elapsed
+        return inner
+    
+    @timer
     def run(self):
-        self.print(f'\n{"Starting the Filtering Program":.^120}\n')
+        self.print(f'\n{"Starting Filtering Program":=^100}\n')
         mesh, mesh_nodes = extract_surface(self.mesh_dir, self.mesh_filename, self.output, 'EXTRACT', self.cut_location)
-        nnodes, nb_times = extract_data(self.dir_to_post, self.cut_location, self.output, self.variable, reload_data=False)
-        fft_file = fft(self.cut_location, self.output, nnodes, self.variable, self.dt, self.freq_min, self.freq_max, self.zones, self.override)
-        reconstruction(self.dir_to_post, mesh, self.variable, nb_times, self.freq_min, self.freq_max, fft_file, self.target_dir)
-        self.print(f'\n{"Filtering Program Complete":.^120}\n')
+        nnodes, nb_times = extract_data(self.dir_to_post, self.cut_location, mesh ,self.output, self.variable, 'EXTRACT',reload_data=False)
+        fft_file = parallel_fft(self.output, nnodes, self.variable, self.dt, self.freq_min, self.freq_max, self.zones, self.override, self.cores)
+        reconstruction( mesh, self.variable, nb_times, self.freq_min, self.freq_max, fft_file, self.target_dir)
+        self.print(f'\n{"Filtering Program Complete":=^100}\n')
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Run FFT filtering pipeline on transient data.')
@@ -64,6 +78,7 @@ def parse_args():
     parser.add_argument('--freq_min', type=int, default=800, help='Min frequency for bandpass')
     parser.add_argument('--freq_max', type=int, default=1500, help='Max frequency for bandpass')
     parser.add_argument('--zones', type=int, default=1500, help='Number of spatial segments in FFT')
+    parser.add_argument('--cores', type=int, default=10, help='Number of cores for parallel FFT')
     parser.add_argument('--override', type=bool, default=False, help='Force override of FFT segmentation zones')
     return parser.parse_args()
 

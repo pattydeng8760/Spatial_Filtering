@@ -7,7 +7,6 @@ import shutil
 import h5py
 
 # The data reconstrction script
-# The data reconstrction script
 def reconstruction(mesh,var_interest,nb_times,freq_min:int,freq_max:int,fft_file:str,target_dir:str,nstart=None,nend=None,ndt=None):
     """Applying the reconstruction process to the filtered data stored in fft_file after fft. Loads the mesh file and 
     reconstructs the filtered data at each time step. The reconstructed data is saved in the target_dir.
@@ -35,23 +34,20 @@ def reconstruction(mesh,var_interest,nb_times,freq_min:int,freq_max:int,fft_file
     r=Reader('hdf_antares')
     r['filename']='{0:s}'.format(mesh)
     plane=r.read()
-    timearray=[str(i).zfill(4) for i in range(int(nb_times))]
-    timearray=timearray[nstart:nend:ndt] if ndt is not None and nend is not None and nstart is not None else timearray
-    print("Reading the Base Mesh File")
-    print("Reconstructing the filtered signal")
+    print("----> Reconstructing the filtered signal")
     for var in var_interest:
         # Loading the filtered data from the fft_file
-        f=h5py.File(fft_file,'r')
-        tim=f['/time'][()]
-        sig=f['/filtered_{0:s}'.format(var)][()]
-        sig_rms=f['/filtered_rms_{0:s}'.format(var)][()]
-        print(len(tim))
-        print(sig)
-        f.close()
-
-        for idx in enumerate(timearray):
+        with h5py.File(fft_file, 'r') as f:
+            tim=np.array(f['/time'][()])
+            sig=np.array(f['/filtered_{0:s}'.format(var)][()])
+            #sig_rms=f['/filtered_rms_{0:s}'.format(var)][()]
+        # The time array is the same for all variables
+        timearray=tim
+        timearray=timearray[nstart:nend:ndt] if ndt is not None and nend is not None and nstart is not None else timearray
+        # Reconstructing the filtered signal
+        for idx,value in enumerate(timearray):
             if idx%100==0:
-                print('Reconstructing the signal at time {0:03.0f} of {1:03.0f}'.format(idx,len(timearray)))
+                print('    Reconstructing the signal at time {0:03.0f} of {1:03.0f}'.format(idx,len(timearray)))
             animated_base = Base()
             animated_base['0'] = Zone()
             animated_base[0].shared.connectivity = plane[0][0].connectivity
@@ -61,13 +57,13 @@ def reconstruction(mesh,var_interest,nb_times,freq_min:int,freq_max:int,fft_file
             animated_base[0].shared["x"] = plane[0][0]["x"] 
             animated_base[0][str(idx)] = Instant()
             animated_base[0][str(idx)]['Filtered_'+var] = sig[:,idx]
-            animated_base[0][str(idx)].attrs['Time'] = float(idx)
+            animated_base[0][str(idx)].attrs['Time'] = float(value)
             w = Writer('hdf_antares')
             w['filename'] = os.path.join(target_dir,'Filtered_{0:s}_{1:03.0f}_{2:03.0f}_{3:03d}'.format(var,freq_min,freq_max,idx))
             w['base'] = animated_base
             w['dtype'] = 'float32'
             w.dump()
-    text = 'Constructed FFT file is stored in {0:s}'.format(target_dir)
+    text = '\n Constructed FFT file is stored in {0:s}'.format(target_dir)
     print(f'\n{text}\n')  
     del w, plane
     text = 'Reconstruction Process Complete'

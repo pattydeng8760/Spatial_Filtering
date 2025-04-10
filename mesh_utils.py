@@ -28,7 +28,7 @@ def map_cut(data_type:str,cut_style:str,tip_gap:float,span:float,AoA:int):
         origin (list): The origin of the cut plane
         normal (list): The normal of the cut plane
     """
-    z_loc = constants(tip_gap,span)
+    z_loc = Constants(tip_gap,span)
     if data_type == 'EXTRACT':
         if cut_style.find("midspan") != -1:
             origin = [1.225,0.,z_loc.z_mid_span]
@@ -93,15 +93,15 @@ def extract_surface(mesh_fileDir:str,mesh_fileName:str,output:str, data_type:str
         nodes (int): The number of nodes on the surface
     """
     text = 'Extracting Mesh'
-    print(f'\n{text:.^80}\n')
+    print(f'\n{text:.^60}\n')
     # The name of the mesh file is the cut location name
     mesh_name = cut_location + '_Mesh'  
-    mesh = os.path.join(output,mesh_name+'.h5')
-    if os.path.exists(mesh) == True and reload == False:
-        print('----> LES Mesh already extracted at {0:s}'.format(mesh))
+    mesh_file = os.path.join(output,mesh_name+'.h5')
+    if os.path.exists(mesh_file) == True and reload == False:
+        print('----> LES Mesh already extracted at {0:s}'.format(mesh_file))
         # Loading the mesh
         r = Reader('hdf_antares')
-        r['filename'] = mesh
+        r['filename'] = mesh_file
         mesh = r.read()
         mesh.show()
         nodes = mesh[0][0]['x'].shape[0]
@@ -156,11 +156,11 @@ def extract_surface(mesh_fileDir:str,mesh_fileName:str,output:str, data_type:str
         text = '----> Extracting the output mesh from AVBP OUTPUT POSTPROC'
         print(f'{text}')   
         r = Reader('hdf_avbp')
-        mesh = os.path.join(mesh_fileDir,mesh_fileName)
+        dest_mesh = os.path.join(mesh_fileDir,mesh_fileName)
         mesh = os.path.join(output,mesh_name+'.h5')
         r['filename'] = mesh
         base  = r.read() # b is the Base object of the Antares API
-        shutil.copyfile(mesh, mesh)
+        shutil.copyfile(mesh, dest_mesh)
         nodes = base['0000'][0].shape[0]
         text = '----> The AVBP OUTPUT POSTPROC Database Mesh Surface'
         base.show()
@@ -204,8 +204,8 @@ def extract_surface(mesh_fileDir:str,mesh_fileName:str,output:str, data_type:str
         inter.show()
         nodes = inter['0000'][0].shape[0]
         print('\nThe number of nodes on the surface is: {0:d}'.format(nodes))
-        mesh = os.path.join(output,mesh_name+'.h5')
-        print('\nThe Extracted surface mesh is saved in: {0:s}'.format(mesh))
+        mesh_file = os.path.join(output,mesh_name+'.h5')
+        print('\nThe Extracted surface mesh is saved in: {0:s}'.format(mesh_file))
     text = 'Mesh Extraction Complete!'
-    print(f'\n{text:.^80}\n')  
-    return mesh, nodes
+    print(f'\n{text:.^60}\n')  
+    return mesh_file, nodes
