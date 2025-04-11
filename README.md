@@ -1,4 +1,4 @@
-# spatial_filter
+# Spatial_Filtering
 
 A Python module for applying FFT-based filtering to transient CFD data (e.g. dilatation fields) extracted from LES or AVBP simulations. Designed for post-processing visualization.
 Developed as part of advanced CFD/Aeroacoustics analysis workflows.
