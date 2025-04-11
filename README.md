@@ -64,7 +64,7 @@ args = argparse.Namespace(
 )
 
 filter_job = FieldFilter(args)
-filter_job.run()
+filter_job.run(args)
 ```
 
 ## Dependencies 
